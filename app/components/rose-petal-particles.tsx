@@ -5,8 +5,8 @@ import { useMemo, useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Instances, Instance } from '@react-three/drei';
 
-// Rose-gold petal colors matching the theme
-const petalColors = ['#e8b298', '#d4a574', '#f5c9b0', '#e0a682', '#c99165'];
+// Realistic rose petal colors - deep reds, pinks, and crimsons
+const petalColors = ['#c2185b', '#e91e63', '#d81b60', '#ad1457', '#f06292', '#ec407a'];
 
 // Generate random values outside component for React 19 purity compliance
 const generatePetalData = () => ({
@@ -77,11 +77,18 @@ function RosePetal() {
 export function RosePetalParticles() {
   const petalShape = useMemo(() => {
     const shape = new THREE.Shape();
-    // A more petal-like shape
-    shape.moveTo(0.25, -0.25);
-    shape.quadraticCurveTo(0, -0.5, -0.25, -0.25);
-    shape.quadraticCurveTo(-0.5, 0, 0, 0.5);
-    shape.quadraticCurveTo(0.5, 0, 0.25, -0.25);
+    // Realistic rose petal shape - organic, curved with a pointed tip
+    shape.moveTo(0, 0);
+    
+    // Left side of petal - curved outward
+    shape.bezierCurveTo(-0.15, 0.1, -0.25, 0.3, -0.2, 0.5);
+    
+    // Top of petal - rounded edge
+    shape.bezierCurveTo(-0.1, 0.65, 0.1, 0.65, 0.2, 0.5);
+    
+    // Right side of petal - curved inward
+    shape.bezierCurveTo(0.25, 0.3, 0.15, 0.1, 0, 0);
+    
     return new THREE.ShapeGeometry(shape);
   }, []);
 

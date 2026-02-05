@@ -52,13 +52,13 @@ export function DescriptionCards({ memory, currentIndex }: DescriptionCardsProps
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5 }}
-            className="mx-4 mb-20 rounded-2xl bg-white p-6 shadow-xl"
+            className="mx-4 mb-16 rounded-2xl bg-white/95 backdrop-blur-sm p-4 shadow-xl sm:p-6"
           >
-            <h2 className="mb-3 font-serif text-xl font-bold text-primary">
+            <h2 className="mb-2 font-serif text-lg font-bold text-primary sm:mb-3 sm:text-xl">
               {memory.title}
             </h2>
-            <Sparkles size={16} className="mb-3 text-primary" strokeWidth={1.5} />
-            <p className="font-sans text-sm italic leading-relaxed text-foreground/70">
+            <Sparkles size={16} className="mb-2 text-primary sm:mb-3" strokeWidth={1.5} />
+            <p className="font-sans text-xs italic leading-relaxed text-foreground/70 sm:text-sm line-clamp-3">
               &ldquo;{memory.caption}&rdquo;
             </p>
           </motion.div>

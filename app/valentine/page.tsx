@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, startTransition } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import timelineDataJson from "@/lib/timeline-data.json";
+import { useToast } from "@/hooks/use-toast";
 import { SceneWrapper } from "@/app/components/scene-wrapper";
 import { RosePetalParticles } from "@/app/components/rose-petal-particles";
 import { ArchiveGrid } from "@/components/archive-grid";
@@ -27,9 +27,10 @@ interface Memory {
 function ValentinePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   
-  const [timelineData, setTimelineData] = useState<Memory[]>(timelineDataJson as Memory[]);
-  const isHydratedRef = useRef(false);
+  const [timelineData, setTimelineData] = useState<Memory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const currentIndex = Number(searchParams.get('memory')) || 0;
   const isArchiveOpen = searchParams.get('archive') === 'true';
   
@@ -49,32 +50,37 @@ function ValentinePageContent() {
     router.push(`?${current.toString()}`, { scroll: false });
   };
 
+  // Fetch memories from database
   useEffect(() => {
-    const savedData = localStorage.getItem('timelineData');
-    if (savedData) {
+    const fetchMemories = async () => {
       try {
-        const parsed = JSON.parse(savedData);
-        startTransition(() => {
-          setTimelineData(parsed);
+        const response = await fetch('/api/memories');
+        if (!response.ok) {
+          throw new Error('Failed to fetch memories');
+        }
+        const data = await response.json();
+        setTimelineData(data.memories.map((m: { id: string; title: string; date: string; caption: string; description: string; image_url: string }) => ({
+          id: m.id,
+          title: m.title,
+          date: m.date,
+          caption: m.caption,
+          description: m.description,
+          imageUrl: m.image_url,
+        })));
+      } catch (error) {
+        console.error('Error fetching memories:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load memories.",
+          variant: "destructive",
         });
-      } catch (e) {
-        console.error('Failed to parse saved timeline data:', e);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    isHydratedRef.current = true;
-  }, []);
+    };
 
-  useEffect(() => {
-    if (isHydratedRef.current) {
-      try {
-        localStorage.setItem('timelineData', JSON.stringify(timelineData));
-      } catch (e) {
-        console.error('Failed to save timeline data:', e);
-      }
-    }
-  }, [timelineData]);
-
-  const currentMemory = timelineData[currentIndex];
+    fetchMemories();
+  }, [toast]);
 
   const handleNext = () => {
     const nextIndex = (currentIndex + 1) % timelineData.length;
@@ -89,28 +95,86 @@ function ValentinePageContent() {
     setIsAddMemoryOpen(true);
   };
 
-  const handleAddMemory = (memory: {
+  const handleAddMemory = async (memory: {
     title: string;
     date: string;
     caption: string;
     imageUrl: string;
   }) => {
-    const newMemory: Memory = {
-      id: crypto.randomUUID(),
-      title: memory.title,
-      date: memory.date,
-      caption: memory.caption,
-      description: memory.caption,
-      imageUrl: memory.imageUrl, // ✅ Correct field for custom images
-    };
+    try {
+      const response = await fetch('/api/memories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: memory.title,
+          date: memory.date,
+          caption: memory.caption,
+          description: memory.caption,
+          imageUrl: memory.imageUrl,
+        }),
+      });
 
-    const updatedData = [...timelineData, newMemory];
-    setTimelineData(updatedData);
+      if (!response.ok) {
+        throw new Error('Failed to create memory');
+      }
+
+      const { memory: newMemory } = await response.json();
+      
+      const formattedMemory: Memory = {
+        id: newMemory.id,
+        title: newMemory.title,
+        date: newMemory.date,
+        caption: newMemory.caption,
+        description: newMemory.description,
+        imageUrl: newMemory.image_url,
+      };
+
+      setTimelineData([...timelineData, formattedMemory]);
+      
+      toast({
+        title: "Success",
+        description: "Memory added successfully!",
+      });
+    } catch (error) {
+      console.error('Error adding memory:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add memory. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (!currentMemory) {
-    return null;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-primary">Loading memories...</div>
+      </div>
+    );
   }
+
+  if (timelineData.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-primary mb-4">No memories yet. Start creating your story!</p>
+          <button
+            onClick={() => setIsAddMemoryOpen(true)}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+          >
+            Add First Memory
+          </button>
+          <AddMemoryDialog
+            isOpen={isAddMemoryOpen}
+            onClose={() => setIsAddMemoryOpen(false)}
+            onAdd={handleAddMemory}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const currentMemory = timelineData[currentIndex];
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background">

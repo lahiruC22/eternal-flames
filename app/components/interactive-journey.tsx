@@ -117,13 +117,12 @@ export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
     setIsAddMemoryOpen(true);
   };
 
-  const handleAddMemory = (memory: {
+  const handleAddMemory = async (_memory: {
     title: string;
     date: string;
     caption: string;
     imageUrl: string;
-  }): void => {
-    console.log("New memory added:", memory);
+  }): Promise<void> => {
     // Implementation to add memory goes here
     setIsAddMemoryOpen(false);
   };
