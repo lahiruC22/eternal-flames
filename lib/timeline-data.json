@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1",
+    "title": "Our First Meeting",
+    "date": "January 14, 2024",
+    "description": "The day our story began",
+    "caption": "The moment our eyes met, I knew my heart had found its home",
+    "imageId": "meeting"
+  },
+  {
+    "id": "2",
+    "title": "First Date",
+    "date": "February 2, 2024",
+    "description": "An unforgettable evening together",
+    "caption": "Under the stars, we shared our dreams and began writing our story",
+    "imageId": "date"
+  },
+  {
+    "id": "3",
+    "title": "Our Adventure",
+    "date": "March 15, 2024",
+    "description": "Exploring the world hand in hand",
+    "caption": "Every step together becomes a cherished memory in our journey",
+    "imageId": "adventure"
+  },
+  {
+    "id": "4",
+    "title": "Special Moment",
+    "date": "December 25, 2024",
+    "description": "A memory to cherish forever",
+    "caption": "A perfect day that reminded us why we fell in love",
+    "imageId": "special"
+  },
+  {
+    "id": "5",
+    "title": "Valentine's Day 2026",
+    "date": "February 14, 2026",
+    "description": "Celebrating our love",
+    "caption": "Together, we create moments that last an eternity",
+    "imageId": "valentine"
+  }
+]
