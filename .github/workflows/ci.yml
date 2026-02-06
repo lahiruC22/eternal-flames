@@ -17,7 +17,7 @@ jobs:
     
     env:
       # Required for build (not actual secrets, just CI placeholders)
-      AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci_dummy_secret_min_32_chars_long_for_nextauth' }}
+      AUTH_SECRET: ci_dummy_secret
       NEXTAUTH_URL: http://localhost:3000
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       BLOB_READ_WRITE_TOKEN: ci_dummy_token
