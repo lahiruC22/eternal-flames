@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense, useCallback } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { motion } from "framer-motion";
 import { JourneyTimeline } from "@/components/journey-timeline";
 import { ValentineDisplay } from "@/app/components/valentine-display";
@@ -10,6 +10,7 @@ import { JourneyHeader } from "@/app/components/journey-header";
 import { JourneyFooter } from "@/app/components/journey-footer";
 import { MemoryDescription } from "@/app/components/memory-description";
 import { NavigationButtons } from "@/app/components/navigation-buttons";
+import { useMusic } from "@/components/music-provider";
 
 interface Memory {
   id: string;
@@ -25,23 +26,10 @@ interface InteractiveJourneyProps {
 }
 
 export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isAddMemoryOpen, setIsAddMemoryOpen] = useState(false);
-
-  useEffect(() => {
-    const audio = new Audio("/music.mp3")
-    audio.loop = true;
-
-    audioRef.current = audio;
-
-    return () => {
-        audio.pause();
-        audio.src = '';
-    };
-  }, []);
+  const { play } = useMusic();
 
   const handleNext = useCallback((): void => {
     setCurrentIndex((prev) => (prev + 1) % timelineData.length);
@@ -74,18 +62,8 @@ export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
     if (target.closest('a, button, [data-prevent-advance="true"]')) {
       return;
     }
-    if (audioRef.current?.paused) {
-      void audioRef.current.play();
-    }
+    play();
     handleNext();
-  };
-
-  const toggleMute = (e: React.MouseEvent): void => {
-    e.stopPropagation();
-    if (audioRef.current) {
-      audioRef.current.muted = !audioRef.current.muted;
-      setIsMuted(audioRef.current.muted);
-    }
   };
 
   const handleArchiveSelect = (index: number): void => {
@@ -141,7 +119,7 @@ export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
           />
         </div>
 
-        <JourneyFooter isMuted={isMuted} onToggleMute={toggleMute} />
+        <JourneyFooter />
       </motion.div>
 
       <MemoryDescription

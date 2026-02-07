@@ -3,6 +3,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/session-provider";
+import { MusicProvider } from "@/components/music-provider";
+import { SelectionClearer } from "@/components/selection-clearer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,8 +34,12 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${playfairDisplay.variable}`}>
       <body className="font-sans antialiased">
         <SessionProvider>
-          {children}
-          <Toaster />
+          <MusicProvider>
+            <SelectionClearer>
+              {children}
+              <Toaster />
+            </SelectionClearer>
+          </MusicProvider>
         </SessionProvider>
       </body>
     </html>
