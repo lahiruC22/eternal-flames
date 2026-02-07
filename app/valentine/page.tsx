@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
@@ -33,8 +34,7 @@ function ValentinePageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const currentIndex = Number(searchParams.get('memory')) || 0;
   const isArchiveOpen = searchParams.get('archive') === 'true';
-  
-  const [isMuted, setIsMuted] = useState(false);
+
   const [isAddMemoryOpen, setIsAddMemoryOpen] = useState(false);
   const updateURL = (params: Record<string, string | null>) => {
     const current = new URLSearchParams(searchParams.toString());
@@ -176,8 +176,23 @@ function ValentinePageContent() {
 
   const currentMemory = timelineData[currentIndex];
 
+  const handleClearSelection = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("input, textarea, [contenteditable='true']")) {
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed) {
+      selection.removeAllRanges();
+    }
+  };
+
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-background">
+    <div
+      className="relative h-screen w-full overflow-hidden bg-background"
+      onMouseDown={handleClearSelection}
+    >
       <SceneWrapper className="pointer-events-none absolute inset-0 z-0">
         <ambientLight intensity={0.5} />
         <RosePetalParticles />
@@ -202,10 +217,7 @@ function ValentinePageContent() {
         currentIndex={currentIndex}
       />
 
-      <ValentineFooter
-        isMuted={isMuted}
-        onToggleMute={() => setIsMuted(!isMuted)}
-      />
+      <ValentineFooter />
 
       <ArchiveGrid
         isOpen={isArchiveOpen}

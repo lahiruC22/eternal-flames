@@ -10,7 +10,7 @@ export function ValentineHeader({ onOpenArchive }: ValentineHeaderProps) {
   return (
     <>
       <header className="absolute left-4 top-6 z-10 sm:left-8 sm:top-8 md:left-12 md:top-12">
-        <h1 className="font-serif text-xs uppercase tracking-[0.3em] text-foreground/60 sm:text-sm">
+        <h1 className="font-serif text-xs font-bold uppercase tracking-[0.3em] text-foreground/60 sm:text-sm">
           Our Story
         </h1>
       </header>
