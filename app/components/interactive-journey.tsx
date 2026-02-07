@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { JourneyTimeline } from "@/components/journey-timeline";
 import { ValentineDisplay } from "@/app/components/valentine-display";
 import { ArchiveGrid } from "@/components/archive-grid";
 import { AddMemoryDialog } from "@/components/add-memory-dialog";
-import { EntryScreen } from "@/app/components/entry-screen";
 import { JourneyHeader } from "@/app/components/journey-header";
 import { JourneyFooter } from "@/app/components/journey-footer";
 import { MemoryDescription } from "@/app/components/memory-description";
@@ -26,9 +25,7 @@ interface InteractiveJourneyProps {
 }
 
 export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
-  const [isEntered, setIsEntered] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isMusicReady, setIsMusicReady] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
@@ -38,15 +35,9 @@ export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
     const audio = new Audio("/music.mp3")
     audio.loop = true;
 
-    const handleCanPlay = () => {
-        setIsMusicReady(true);
-    }
-
-    audio.addEventListener("canplaythrough", handleCanPlay, { once: true });
     audioRef.current = audio;
 
     return () => {
-        audio.removeEventListener("canplaythrough", handleCanPlay);
         audio.pause();
         audio.src = '';
     };
@@ -71,31 +62,20 @@ export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
       }
     };
 
-    if (isEntered) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isEntered, handleNext, handlePrev]);
-
-  const handleEnter = async (): Promise<void> => {
-    if (!isMusicReady || !audioRef.current) return;
-
-    try{
-        await audioRef.current.play();
-        setIsEntered(true);
-    } catch (error) {
-        console.error("Failed to play audio:", error);
-        setIsEntered(true);
-    }
-  };
+  }, [handleNext, handlePrev]);
 
   const handleAdvance = (e: React.MouseEvent): void => {
     const target = e.target as HTMLElement;
     if (target.closest('a, button, [data-prevent-advance="true"]')) {
       return;
+    }
+    if (audioRef.current?.paused) {
+      void audioRef.current.play();
     }
     handleNext();
   };
@@ -129,16 +109,6 @@ export function InteractiveJourney({ timelineData }: InteractiveJourneyProps) {
 
   const currentMemory = timelineData[currentIndex];
   const isEven = currentIndex % 2 === 0;
-
-  if (!isEntered) {
-    return (
-      <main className="relative min-h-screen w-full overflow-hidden bg-background text-foreground">
-        <AnimatePresence>
-          <EntryScreen isMusicReady={isMusicReady} onEnter={handleEnter} />
-        </AnimatePresence>
-      </main>
-    );
-  }
 
   return (
     <main
