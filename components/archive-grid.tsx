@@ -18,6 +18,8 @@ interface Memory {
   description: string;
   imageId?: string;
   imageUrl?: string;
+  imageFocusX?: number | null;
+  imageFocusY?: number | null;
 }
 
 /**
@@ -40,7 +42,7 @@ export function ArchiveGrid({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-[1200px] bg-[#e8d5d5]/98 p-12 backdrop-blur-md"
+        className="max-w-[1100px] w-[92vw] bg-[#e8d5d5]/98 p-12 backdrop-blur-md"
         data-prevent-advance="true"
       >
         <div className="mb-6">

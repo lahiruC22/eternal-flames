@@ -8,6 +8,8 @@ export interface Memory {
   caption: string;
   description: string;
   image_url: string;
+  image_focus_x: number | null;
+  image_focus_y: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -19,6 +21,14 @@ export interface CreateMemoryInput {
   caption: string;
   description?: string;
   imageUrl: string;
+  imageFocusX?: number;
+  imageFocusY?: number;
+}
+
+export interface UpdateMemoryInput
+  extends Partial<Omit<CreateMemoryInput, "userId">> {
+  imageFocusX?: number;
+  imageFocusY?: number;
 }
 
 /**
@@ -28,10 +38,10 @@ export async function getMemories(userId: number): Promise<Memory[]> {
   try {
     const sql = getSql();
     const result = (await sql`
-      SELECT id, user_id, title, date, caption, description, image_url, created_at, updated_at
+      SELECT id, user_id, title, date, caption, description, image_url, image_focus_x, image_focus_y, created_at, updated_at
       FROM memories
       WHERE user_id = ${userId}
-      ORDER BY created_at DESC
+      ORDER BY created_at ASC, id ASC
     `) as Memory[];
 
     return result;
@@ -48,16 +58,18 @@ export async function createMemory(input: CreateMemoryInput): Promise<Memory> {
   try {
     const sql = getSql();
     const result = (await sql`
-      INSERT INTO memories (user_id, title, date, caption, description, image_url)
+      INSERT INTO memories (user_id, title, date, caption, description, image_url, image_focus_x, image_focus_y)
       VALUES (
         ${input.userId},
         ${input.title},
         ${input.date},
         ${input.caption},
         ${input.description || input.caption},
-        ${input.imageUrl}
+        ${input.imageUrl},
+        ${input.imageFocusX ?? null},
+        ${input.imageFocusY ?? null}
       )
-      RETURNING id, user_id, title, date, caption, description, image_url, created_at, updated_at
+      RETURNING id, user_id, title, date, caption, description, image_url, image_focus_x, image_focus_y, created_at, updated_at
     `) as Memory[];
 
     return result[0];
@@ -92,7 +104,7 @@ export async function deleteMemory(
 export async function updateMemory(
   memoryId: string,
   userId: number,
-  updates: Partial<Omit<CreateMemoryInput, "userId">>
+  updates: UpdateMemoryInput
 ): Promise<Memory> {
   try {
     const sql = getSql();
@@ -104,6 +116,8 @@ export async function updateMemory(
     const caption = updates.caption;
     const description = updates.description;
     const imageUrl = updates.imageUrl;
+    const imageFocusX = updates.imageFocusX;
+    const imageFocusY = updates.imageFocusY;
     
     const result = (await sql`
       UPDATE memories
@@ -113,9 +127,11 @@ export async function updateMemory(
         caption = COALESCE(${caption}, caption),
         description = COALESCE(${description}, description),
         image_url = COALESCE(${imageUrl}, image_url),
+        image_focus_x = COALESCE(${imageFocusX}, image_focus_x),
+        image_focus_y = COALESCE(${imageFocusY}, image_focus_y),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${memoryId} AND user_id = ${userId}
-      RETURNING id, user_id, title, date, caption, description, image_url, created_at, updated_at
+      RETURNING id, user_id, title, date, caption, description, image_url, image_focus_x, image_focus_y, created_at, updated_at
     `) as Memory[];
 
     if (result.length === 0) {

@@ -16,6 +16,18 @@ function validateMemoryFields(fields: {
   return requiredFields.every(field => field !== undefined && field !== null && field !== '');
 }
 
+function isValidFocusValue(value: unknown): boolean {
+  if (value === undefined) {
+    return true;
+  }
+
+  if (typeof value !== "number") {
+    return false;
+  }
+
+  return value >= 0 && value <= 1;
+}
+
 /**
  * GET /api/memories - Get all memories for authenticated user
  */
@@ -58,12 +70,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, date, caption, description, imageUrl } = body;
+    const { title, date, caption, description, imageUrl, imageFocusX, imageFocusY } = body;
 
     // Validate required fields
     if (!validateMemoryFields({ title, date, caption, imageUrl })) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidFocusValue(imageFocusX) || !isValidFocusValue(imageFocusY)) {
+      return NextResponse.json(
+        { error: "Invalid image focus values" },
         { status: 400 }
       );
     }
@@ -76,6 +95,8 @@ export async function POST(request: NextRequest) {
       caption,
       description,
       imageUrl,
+      imageFocusX,
+      imageFocusY,
     });
 
     return NextResponse.json({ memory }, { status: 201 });
