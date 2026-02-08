@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import type { MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
+import { useMusic } from "@/components/music-provider";
 import { SceneWrapper } from "@/app/components/scene-wrapper";
 import { RosePetalParticles } from "@/app/components/rose-petal-particles";
 import { ArchiveGrid } from "@/components/archive-grid";
@@ -31,6 +32,7 @@ function ValentinePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { play, isReady } = useMusic();
   
   const [timelineData, setTimelineData] = useState<Memory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +87,35 @@ function ValentinePageContent() {
 
     fetchMemories();
   }, [toast]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    const shouldAutoplay = window.sessionStorage.getItem("valentine_autoplay") === "true";
+    if (!shouldAutoplay) {
+      return;
+    }
+
+    const handleUserStart = () => {
+      void play().then((started) => {
+        if (started) {
+          window.sessionStorage.removeItem("valentine_autoplay");
+        }
+      });
+      window.removeEventListener("pointerdown", handleUserStart);
+      window.removeEventListener("keydown", handleUserStart);
+    };
+
+    window.addEventListener("pointerdown", handleUserStart, { once: true });
+    window.addEventListener("keydown", handleUserStart, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", handleUserStart);
+      window.removeEventListener("keydown", handleUserStart);
+    };
+  }, [isReady, play]);
 
   const handleNext = () => {
     const nextIndex = (currentIndex + 1) % timelineData.length;
@@ -245,6 +276,20 @@ function ValentinePageContent() {
 export default function ValentinePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      return;
+    }
+
+    const hasUnlock = typeof window !== "undefined" &&
+      window.sessionStorage.getItem("valentine_unlocked") === "true";
+
+    if (!hasUnlock) {
+      void signOut({ redirect: false });
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
