@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
+import { useImageFocus } from "@/hooks/use-image-focus";
 import {
   Dialog,
   DialogContent,
@@ -37,9 +38,29 @@ export function AddMemoryDialog({
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isPortrait, setIsPortrait] = useState<boolean | null>(null);
+  const [previewOrientation, setPreviewOrientation] = useState<"portrait" | "landscape" | "square" | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { focus, registerImage } = useImageFocus({
+    imageUrl: imagePreview ?? "",
+    existingFocus: null,
+    enabled: Boolean(imagePreview),
+  });
+
+  const objectPosition = focus
+    ? `${(focus.x * 100).toFixed(2)}% ${(focus.y * 100).toFixed(2)}%`
+    : isPortrait
+      ? "center top"
+      : "center";
+
+  const previewFrameClassName = previewOrientation === "portrait"
+    ? "aspect-[4/5]"
+    : previewOrientation === "square"
+      ? "aspect-square"
+      : "aspect-[16/9]";
 
   const validateField = (field: string, value: string) => {
     if (!value.trim()) {
@@ -179,7 +200,7 @@ export function AddMemoryDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg bg-background">
+      <DialogContent className="max-w-lg bg-background max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl text-primary">
             Add New Memory
@@ -189,7 +210,7 @@ export function AddMemoryDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pr-1">
           <div className="space-y-2">
             <label
               htmlFor="title"
@@ -263,12 +284,22 @@ export function AddMemoryDialog({
                 )}
               </div>
             ) : (
-              <div className="relative w-full h-48">
+              <div className={`relative w-full ${previewFrameClassName} overflow-hidden rounded-lg`}>
                 <Image
                   src={imagePreview}
                   alt="Preview"
                   fill
                   className="object-cover rounded-lg"
+                  style={{ objectPosition }}
+                  onLoad={(event) => {
+                    const img = event.currentTarget;
+                    const nextIsPortrait = img.naturalHeight > img.naturalWidth;
+                    setIsPortrait((prev) => (prev === nextIsPortrait ? prev : nextIsPortrait));
+                    const ratio = img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1;
+                    const nextOrientation = ratio > 1.1 ? "portrait" : ratio < 0.9 ? "landscape" : "square";
+                    setPreviewOrientation((prev) => (prev === nextOrientation ? prev : nextOrientation));
+                    registerImage(img);
+                  }}
                 />
                 <Button
                   type="button"

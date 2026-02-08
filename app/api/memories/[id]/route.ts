@@ -3,6 +3,18 @@ import { NextResponse } from 'next/server';
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { deleteMemory, updateMemory } from "@/lib/memories";
 
+function isValidFocusValue(value: unknown): boolean {
+  if (value === undefined) {
+    return true;
+  }
+
+  if (typeof value !== "number") {
+    return false;
+  }
+
+  return value >= 0 && value <= 1;
+}
+
 /**
  * DELETE /api/memories/[id] - Delete a memory
  */
@@ -56,6 +68,18 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
     const userId = parseInt(session.user.id);
+
+    const { imageFocusX, imageFocusY } = body as {
+      imageFocusX?: unknown;
+      imageFocusY?: unknown;
+    };
+
+    if (!isValidFocusValue(imageFocusX) || !isValidFocusValue(imageFocusY)) {
+      return NextResponse.json(
+        { error: "Invalid image focus values" },
+        { status: 400 }
+      );
+    }
 
     const memory = await updateMemory(id, userId, body);
 

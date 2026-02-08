@@ -7,16 +7,16 @@
 
 A romantic timeline application to capture and cherish special moments together. Built with modern web technologies and deployed on Vercel.
 
-## ✨ Features
+## Features
 
-- 🎨 Beautiful 3D rose petal particle effects
-- 📸 Image upload with Vercel Blob storage
-- 🗄️ PostgreSQL database with Neon
-- 🔐 Secure authentication with NextAuth
-- 📱 Fully responsive mobile design
-- ⚡ Server-first architecture with React Server Components
+- Beautiful 3D rose petal particle effects
+- Image upload with Vercel Blob storage
+- PostgreSQL database with Neon
+- Secure authentication with NextAuth
+- Fully responsive mobile design
+- Server-first architecture with React Server Components
 
-## 🚀 Tech Stack
+## Tech Stack
 
 - **Framework**: Next.js 16.1.6 (App Router)
 - **Language**: TypeScript 5 (strict mode)
@@ -27,7 +27,7 @@ A romantic timeline application to capture and cherish special moments together.
 - **Auth**: NextAuth v5
 - **Deployment**: Vercel (automatic from main branch)
 
-## 📦 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -77,7 +77,7 @@ A romantic timeline application to capture and cherish special moments together.
 
 Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-## 🔧 Development
+## Development
 
 ### Available Scripts
 
@@ -104,7 +104,7 @@ eternal-flames/
 └── public/               # Static assets
 ```
 
-## 🔒 Security
+## Security
 
 - Passwords hashed with bcrypt (10 salt rounds)
 - JWT-based sessions (HTTP-only cookies)
@@ -113,7 +113,7 @@ eternal-flames/
 - User isolation enforced in all database queries
 - File upload validation (type, size, sanitization)
 
-## 🚦 CI/CD
+## CI/CD
 
 ### Automated Checks
 
@@ -131,28 +131,28 @@ Vercel handles deployment automatically:
 - **Preview**: Deploys from pull requests
 - No manual deployment needed
 
-## 📖 Documentation
+## Documentation
 
 - [Best Practices](BEST-PRACTICES.md) - Engineering patterns and standards
 - [Performance Guide](PERFORMANCE.md) - Optimization recommendations
 - [UI/UX Improvements](UI-UX-IMPROVEMENTS.md) - Accessibility and UX enhancements
 - [Setup Guide](SETUP-AUTH-STORAGE.md) - Authentication and storage configuration
 
-## 🤝 Contributing
+## Contributing
 
 1. Create a feature branch from `main`
 2. Make your changes
 3. Ensure all CI checks pass
 4. Submit a pull request
 
-## 📝 License
+## License
 
 This is a personal project. All rights reserved.
 
-## 🙋 Support
+## Support
 
 For issues or questions, please open a GitHub issue.
 
 ---
 
-**Built with ❤️ using Next.js and React**
+Built with Next.js and React.

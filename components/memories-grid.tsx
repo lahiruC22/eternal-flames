@@ -12,6 +12,8 @@ interface MemoriesGridProps {
     description: string;
     imageId?: string;
     imageUrl?: string;
+    imageFocusX?: number | null;
+    imageFocusY?: number | null;
   }>;
   onSelect: (index: number) => void;
 }
@@ -22,8 +24,8 @@ interface MemoriesGridProps {
  */
 export function MemoriesGrid({ memories, onSelect }: MemoriesGridProps) {
   return (
-    <div className="max-h-[65vh] overflow-y-auto pr-2">
-      <div className="grid grid-cols-3 gap-6 auto-rows-[300px]">
+    <div className="max-h-[70vh] overflow-y-auto pr-2">
+      <div className="grid grid-cols-2 gap-6 auto-rows-[300px] md:grid-cols-3">
         {memories.map((item, index) => {
           const { isWide } = getMasonryPattern(index);
 
@@ -37,6 +39,8 @@ export function MemoriesGrid({ memories, onSelect }: MemoriesGridProps) {
               description={item.description}
               imageId={item.imageId}
               imageUrl={item.imageUrl}
+              imageFocusX={item.imageFocusX}
+              imageFocusY={item.imageFocusY}
               isWide={isWide}
               onClick={() => onSelect(index)}
             />

@@ -23,6 +23,8 @@ interface Memory {
   description: string;
   imageId?: string;   // For placeholder images
   imageUrl?: string;  // For custom uploaded images
+  imageFocusX?: number | null;
+  imageFocusY?: number | null;
 }
 
 function ValentinePageContent() {
@@ -59,13 +61,15 @@ function ValentinePageContent() {
           throw new Error('Failed to fetch memories');
         }
         const data = await response.json();
-        setTimelineData(data.memories.map((m: { id: string; title: string; date: string; caption: string; description: string; image_url: string }) => ({
+        setTimelineData(data.memories.map((m: { id: string; title: string; date: string; caption: string; description: string; image_url: string; image_focus_x: number | null; image_focus_y: number | null }) => ({
           id: m.id,
           title: m.title,
           date: m.date,
           caption: m.caption,
           description: m.description,
           imageUrl: m.image_url,
+          imageFocusX: m.image_focus_x,
+          imageFocusY: m.image_focus_y,
         })));
       } catch (error) {
         console.error('Error fetching memories:', error);
@@ -127,6 +131,8 @@ function ValentinePageContent() {
         caption: newMemory.caption,
         description: newMemory.description,
         imageUrl: newMemory.image_url,
+        imageFocusX: newMemory.image_focus_x,
+        imageFocusY: newMemory.image_focus_y,
       };
 
       setTimelineData([...timelineData, formattedMemory]);
