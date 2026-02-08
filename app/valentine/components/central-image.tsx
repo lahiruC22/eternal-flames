@@ -49,8 +49,8 @@ function getObjectPosition(
 
 function getFrameClassName(isPortrait: boolean | null): string {
   return isPortrait
-    ? "h-[260px] sm:h-[320px] md:h-[520px] md:w-[520px]"
-    : "h-[200px] sm:h-[250px] md:h-[400px] md:w-[700px]";
+    ? "w-full max-w-[92vw] aspect-[4/5] sm:aspect-[3/4] md:aspect-auto md:h-[520px] md:w-[520px]"
+    : "w-full max-w-[92vw] aspect-[3/2] sm:aspect-[16/10] md:aspect-auto md:h-[400px] md:w-[700px]";
 }
 
 export function CentralImage({ memory, currentIndex, onNext }: CentralImageProps) {
