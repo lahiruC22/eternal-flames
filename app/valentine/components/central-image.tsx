@@ -60,9 +60,16 @@ function clampAspectRatio(ratio: number): number {
 
 export function CentralImage({ memory, currentIndex, onNext }: CentralImageProps) {
   const [measuredRatio, setMeasuredRatio] = useState<number | null>(null);
-  const [isImageReady, setIsImageReady] = useState(false);
+  const [lastMemoryId, setLastMemoryId] = useState(memory.id);
+  
   const imageSrc =
     memory.imageUrl || `https://picsum.photos/seed/${memory.imageId}/1400/800`;
+
+  // Reset measured ratio when memory changes (setState during render pattern)
+  if (memory.id !== lastMemoryId) {
+    setMeasuredRatio(null);
+    setLastMemoryId(memory.id);
+  }
 
   const existingFocus = resolveExistingFocus(memory);
 
@@ -73,29 +80,26 @@ export function CentralImage({ memory, currentIndex, onNext }: CentralImageProps
     enabled: Boolean(imageSrc),
   });
 
-  // Pre-load image to measure aspect ratio and prevent glitch
+  // Derive the final ratio from database or measured state
+  const hasDbRatio = memory.imageAspectRatio !== null && memory.imageAspectRatio !== undefined;
+  const finalRatio: number | null = hasDbRatio ? (memory.imageAspectRatio as number) : measuredRatio;
+  const isImageReady = finalRatio !== null;
+
+  // Pre-load image to measure aspect ratio only if not in database
   useEffect(() => {
-    // If we already have the aspect ratio from database, use it immediately
-    if (memory.imageAspectRatio !== null && memory.imageAspectRatio !== undefined) {
-      setMeasuredRatio(memory.imageAspectRatio);
-      setIsImageReady(true);
+    if (hasDbRatio) {
       return;
     }
 
-    // Otherwise, pre-load the image to measure it before rendering
-    setIsImageReady(false);
     const img = document.createElement('img');
     
     const handleLoad = () => {
       const ratio = img.naturalWidth / img.naturalHeight;
       setMeasuredRatio(ratio);
-      setIsImageReady(true);
     };
 
     const handleError = () => {
-      // Fallback to a neutral ratio on error
       setMeasuredRatio(1.4);
-      setIsImageReady(true);
     };
 
     img.addEventListener('load', handleLoad);
@@ -106,17 +110,16 @@ export function CentralImage({ memory, currentIndex, onNext }: CentralImageProps
       img.removeEventListener('load', handleLoad);
       img.removeEventListener('error', handleError);
     };
-  }, [imageSrc, memory.imageAspectRatio]);
+  }, [imageSrc, hasDbRatio]);
 
-  const resolvedFrameRatio = measuredRatio;
-  const derivedIsPortrait = resolvedFrameRatio !== null ? resolvedFrameRatio < 1 : null;
+  const derivedIsPortrait = finalRatio !== null ? finalRatio < 1 : null;
   const frameClassName = getFrameClassName(derivedIsPortrait);
   const objectPosition = getObjectPosition(focus, derivedIsPortrait);
   const fallbackRatio = derivedIsPortrait ? 0.8 : 1.6;
-  const resolvedRatio = clampAspectRatio(resolvedFrameRatio ?? fallbackRatio);
+  const resolvedRatio = clampAspectRatio(finalRatio ?? fallbackRatio);
 
   // Don't render until we know the aspect ratio
-  if (!isImageReady || resolvedFrameRatio === null) {
+  if (!isImageReady) {
     return (
       <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
         <div className="w-[700px] h-[400px] max-w-[92vw] rounded-2xl bg-rose-500/10 backdrop-blur-sm animate-pulse" />
