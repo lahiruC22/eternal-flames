@@ -15,6 +15,18 @@ function isValidFocusValue(value: unknown): boolean {
   return value >= 0 && value <= 1;
 }
 
+function isValidAspectRatio(value: unknown): boolean {
+  if (value === undefined) {
+    return true;
+  }
+
+  if (typeof value !== "number") {
+    return false;
+  }
+
+  return value > 0 && value <= 5;
+}
+
 /**
  * DELETE /api/memories/[id] - Delete a memory
  */
@@ -69,12 +81,18 @@ export async function PATCH(
     const body = await request.json();
     const userId = parseInt(session.user.id);
 
-    const { imageFocusX, imageFocusY } = body as {
+    const { imageFocusX, imageFocusY, imageAspectRatio } = body as {
       imageFocusX?: unknown;
       imageFocusY?: unknown;
+      imageAspectRatio?: unknown;
     };
 
-    if (!isValidFocusValue(imageFocusX) || !isValidFocusValue(imageFocusY)) {
+    const isValidFocus =
+      isValidFocusValue(imageFocusX) &&
+      isValidFocusValue(imageFocusY) &&
+      isValidAspectRatio(imageAspectRatio);
+
+    if (!isValidFocus) {
       return NextResponse.json(
         { error: "Invalid image focus values" },
         { status: 400 }

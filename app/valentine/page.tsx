@@ -7,7 +7,11 @@ import { signOut, useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 import { useMusic } from "@/components/music-provider";
 import { SceneWrapper } from "@/app/components/scene-wrapper";
-import { RosePetalParticles } from "@/app/components/rose-petal-particles";
+import dynamic from "next/dynamic";
+const RosePetalParticles = dynamic(
+  () => import("@/app/components/rose-petal-particles").then((mod) => mod.RosePetalParticles),
+  { ssr: false, loading: () => null }
+);
 import { ArchiveGrid } from "@/components/archive-grid";
 import { AddMemoryDialog } from "@/components/add-memory-dialog";
 import { ValentineHeader } from "./components/valentine-header";
@@ -26,6 +30,7 @@ interface Memory {
   imageUrl?: string;  // For custom uploaded images
   imageFocusX?: number | null;
   imageFocusY?: number | null;
+  imageAspectRatio?: number | null;
 }
 
 function ValentinePageContent() {
@@ -56,23 +61,62 @@ function ValentinePageContent() {
 
   // Fetch memories from database
   useEffect(() => {
+    let isMounted = true;
     const fetchMemories = async () => {
+      let cursor: string | undefined;
+      let isFirstPage = true;
       try {
-        const response = await fetch('/api/memories');
-        if (!response.ok) {
-          throw new Error('Failed to fetch memories');
+        while (isMounted) {
+          const params = new URLSearchParams();
+          params.set("limit", "50");
+          if (cursor) {
+            params.set("cursor", cursor);
+          }
+
+          const response = await fetch(`/api/memories?${params.toString()}`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch memories');
+          }
+
+          const data = await response.json() as {
+            memories: Array<{
+              id: string;
+              title: string;
+              date: string;
+              caption: string;
+              description: string;
+              image_url: string;
+              image_focus_x: number | null;
+              image_focus_y: number | null;
+              image_aspect_ratio: number | null;
+            }>;
+            nextCursor?: string;
+          };
+
+          const mapped = data.memories.map((m) => ({
+            id: m.id,
+            title: m.title,
+            date: m.date,
+            caption: m.caption,
+            description: m.description,
+            imageUrl: m.image_url,
+            imageFocusX: m.image_focus_x,
+            imageFocusY: m.image_focus_y,
+            imageAspectRatio: m.image_aspect_ratio,
+          }));
+
+          if (isFirstPage) {
+            setTimelineData(mapped);
+            isFirstPage = false;
+          } else {
+            setTimelineData((prev) => [...prev, ...mapped]);
+          }
+
+          cursor = data.nextCursor;
+          if (!cursor) {
+            break;
+          }
         }
-        const data = await response.json();
-        setTimelineData(data.memories.map((m: { id: string; title: string; date: string; caption: string; description: string; image_url: string; image_focus_x: number | null; image_focus_y: number | null }) => ({
-          id: m.id,
-          title: m.title,
-          date: m.date,
-          caption: m.caption,
-          description: m.description,
-          imageUrl: m.image_url,
-          imageFocusX: m.image_focus_x,
-          imageFocusY: m.image_focus_y,
-        })));
       } catch (error) {
         console.error('Error fetching memories:', error);
         toast({
@@ -81,11 +125,16 @@ function ValentinePageContent() {
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchMemories();
+    return () => {
+      isMounted = false;
+    };
   }, [toast]);
 
   useEffect(() => {
@@ -130,6 +179,36 @@ function ValentinePageContent() {
     setIsAddMemoryOpen(true);
   };
 
+  useEffect(() => {
+    if (timelineData.length === 0) {
+      return;
+    }
+
+    const prefetchImage = (url?: string) => {
+      if (!url) {
+        return;
+      }
+
+      const existing = document.querySelector(`link[rel="preload"][href="${url}"]`);
+      if (existing) {
+        return;
+      }
+
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.href = url;
+      link.setAttribute("data-prefetch", "true");
+      document.head.appendChild(link);
+    };
+
+    const nextIndex = (currentIndex + 1) % timelineData.length;
+    const prevIndex = (currentIndex - 1 + timelineData.length) % timelineData.length;
+
+    prefetchImage(timelineData[nextIndex]?.imageUrl);
+    prefetchImage(timelineData[prevIndex]?.imageUrl);
+  }, [currentIndex, timelineData]);
+
   const handleAddMemory = async (memory: {
     title: string;
     date: string;
@@ -164,6 +243,7 @@ function ValentinePageContent() {
         imageUrl: newMemory.image_url,
         imageFocusX: newMemory.image_focus_x,
         imageFocusY: newMemory.image_focus_y,
+        imageAspectRatio: newMemory.image_aspect_ratio,
       };
 
       setTimelineData([...timelineData, formattedMemory]);
