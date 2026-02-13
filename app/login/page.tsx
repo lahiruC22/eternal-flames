@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Moon, Sun } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMusic } from "@/components/music-provider";
 import { FloatingHearts } from "./components/floating-hearts";
 import { HeartLockUnlock } from "./components/heart-lock-unlock";
 import { LoginForm } from "./components/login-form";
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const { armAutoplay } = useMusic();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +70,13 @@ export default function LoginPage() {
       } else {
         setIsUnlocking(true);
         setErrorMessage(null);
+
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("valentine_unlocked", "true");
+          window.sessionStorage.setItem("valentine_autoplay", "true");
+        }
+
+        void armAutoplay();
 
         setTimeout(() => {
           router.push("/valentine");

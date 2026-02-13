@@ -28,10 +28,22 @@ function isValidFocusValue(value: unknown): boolean {
   return value >= 0 && value <= 1;
 }
 
+function isValidAspectRatio(value: unknown): boolean {
+  if (value === undefined) {
+    return true;
+  }
+
+  if (typeof value !== "number") {
+    return false;
+  }
+
+  return value > 0 && value <= 5;
+}
+
 /**
  * GET /api/memories - Get all memories for authenticated user
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
 
@@ -43,9 +55,25 @@ export async function GET() {
     }
 
     const userId = parseInt(session.user.id);
-    const memories = await getMemories(userId);
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get("limit");
+    const cursor = searchParams.get("cursor") ?? undefined;
+    const limit = limitParam ? Number(limitParam) : undefined;
 
-    return NextResponse.json({ memories });
+    if (limitParam && Number.isNaN(limit)) {
+      return NextResponse.json(
+        { error: "Invalid limit" },
+        { status: 400 }
+      );
+    }
+
+    const memories = await getMemories(userId, { limit, cursor });
+
+    return NextResponse.json(memories, {
+      headers: {
+        "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+      },
+    });
   } catch (error) {
     console.error("GET /api/memories error:", error);
     return NextResponse.json(
@@ -70,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, date, caption, description, imageUrl, imageFocusX, imageFocusY } = body;
+    const { title, date, caption, description, imageUrl, imageFocusX, imageFocusY, imageAspectRatio } = body;
 
     // Validate required fields
     if (!validateMemoryFields({ title, date, caption, imageUrl })) {
@@ -80,7 +108,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isValidFocusValue(imageFocusX) || !isValidFocusValue(imageFocusY)) {
+    const isValidFocus =
+      isValidFocusValue(imageFocusX) &&
+      isValidFocusValue(imageFocusY) &&
+      isValidAspectRatio(imageAspectRatio);
+
+    if (!isValidFocus) {
       return NextResponse.json(
         { error: "Invalid image focus values" },
         { status: 400 }
@@ -97,6 +130,7 @@ export async function POST(request: NextRequest) {
       imageUrl,
       imageFocusX,
       imageFocusY,
+      imageAspectRatio,
     });
 
     return NextResponse.json({ memory }, { status: 201 });

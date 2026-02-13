@@ -33,6 +33,7 @@ const generatePetalData = () => ({
 
 function RosePetal() {
   const ref = useRef<THREE.Object3D>(null!);
+  const isActiveRef = useRef(true);
 
   const petalData = useMemo(() => generatePetalData(), []);
 
@@ -53,7 +54,22 @@ function RosePetal() {
     }
   }, [petalData]);
 
+  useEffect(() => {
+    const handleVisibility = () => {
+      isActiveRef.current = document.visibilityState === "visible";
+    };
+
+    handleVisibility();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
+
   useFrame((state) => {
+    if (!isActiveRef.current) {
+      return;
+    }
     if (ref.current) {
       ref.current.position.y -= petalData.speed;
       ref.current.position.x +=
@@ -75,6 +91,18 @@ function RosePetal() {
 }
 
 export function RosePetalParticles() {
+  const petalCount = useMemo(() => {
+    if (typeof window === 'undefined') return 60;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const cpuCores = navigator.hardwareConcurrency || 4;
+
+    if (prefersReducedMotion) return 20;
+    if (isMobile || cpuCores <= 4) return 40;
+    return 80;
+  }, []);
+
   const petalShape = useMemo(() => {
     const shape = new THREE.Shape();
     // Realistic rose petal shape - organic, curved with a pointed tip
@@ -93,9 +121,9 @@ export function RosePetalParticles() {
   }, []);
 
   return (
-    <Instances geometry={petalShape} range={100}>
+    <Instances geometry={petalShape} range={petalCount}>
       <meshStandardMaterial toneMapped={false} side={THREE.DoubleSide} />
-      {Array.from({ length: 100 }).map((_, i) => (
+      {Array.from({ length: petalCount }).map((_, i) => (
         <RosePetal key={i} />
       ))}
     </Instances>

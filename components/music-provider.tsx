@@ -8,7 +8,8 @@ import { usePathname } from "next/navigation";
 interface MusicContextValue {
   isMuted: boolean;
   isReady: boolean;
-  play: () => void;
+  play: () => Promise<boolean>;
+  armAutoplay: () => Promise<boolean>;
   toggleMute: () => void;
 }
 
@@ -24,6 +25,7 @@ function useCrossfadeMusic(
   const isCrossfadingRef = useRef(false);
   const readyCountRef = useRef(0);
   const hasStartedRef = useRef(false);
+  const autoplayArmedRef = useRef(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isReadyInternal, setIsReadyInternal] = useState(false);
   const statusRef = useRef(status);
@@ -141,27 +143,51 @@ function useCrossfadeMusic(
     };
   }, [handleEndedA, handleEndedB]);
 
-  const play = useCallback(() => {
-    if (status !== "authenticated" || !isValentineRoute || !isReadyInternal) return;
+  const play = useCallback(async () => {
+    if (status !== "authenticated" || !isValentineRoute || !isReadyInternal) return false;
 
     const audio = getActiveAudio();
-    if (!audio) return;
+    if (!audio) return false;
 
-    audio
-      .play()
-      .then(() => {
-        hasStartedRef.current = true;
-      })
-      .catch(() => {
-      });
+    try {
+      await audio.play();
+      hasStartedRef.current = true;
+      return true;
+    } catch {
+      return false;
+    }
   }, [getActiveAudio, isReadyInternal, isValentineRoute, status]);
+
+  const armAutoplay = useCallback(async () => {
+    autoplayArmedRef.current = true;
+    initAudio();
+
+    const audio = getActiveAudio();
+    if (!audio) {
+      return false;
+    }
+
+    try {
+      await audio.play();
+      hasStartedRef.current = true;
+      return true;
+    } catch {
+      return false;
+    }
+  }, [getActiveAudio, initAudio]);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
   }, []);
 
   useEffect(() => {
-    if (status !== "authenticated" || !isValentineRoute) {
+    if (status !== "authenticated") {
+      stopAudio();
+      hasStartedRef.current = false;
+      return;
+    }
+
+    if (!isValentineRoute && !autoplayArmedRef.current) {
       stopAudio();
       hasStartedRef.current = false;
       return;
@@ -169,6 +195,12 @@ function useCrossfadeMusic(
 
     return initAudio();
   }, [initAudio, isValentineRoute, status, stopAudio]);
+
+  useEffect(() => {
+    if (isValentineRoute && autoplayArmedRef.current) {
+      autoplayArmedRef.current = false;
+    }
+  }, [isValentineRoute]);
 
   useEffect(() => {
     if (audioARef.current) {
@@ -184,13 +216,33 @@ function useCrossfadeMusic(
     if (!isReadyInternal) return;
     if (hasStartedRef.current) return;
 
-    play();
+    void play();
+  }, [isReadyInternal, isValentineRoute, play, status]);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !isValentineRoute) return;
+    if (!isReadyInternal) return;
+    if (hasStartedRef.current) return;
+
+    const shouldAutoplay = typeof window !== "undefined" &&
+      window.sessionStorage.getItem("valentine_autoplay") === "true";
+
+    if (!shouldAutoplay) {
+      return;
+    }
+
+    void play().then((started) => {
+      if (started && typeof window !== "undefined") {
+        window.sessionStorage.removeItem("valentine_autoplay");
+      }
+    });
   }, [isReadyInternal, isValentineRoute, play, status]);
 
   return {
     isMuted,
     isReady: status === "authenticated" && isValentineRoute && isReadyInternal,
     play,
+    armAutoplay,
     toggleMute,
   };
 }
